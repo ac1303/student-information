@@ -52,8 +52,10 @@ Node *Apply_StuNode();
 void Menu(Node *head, TaskData *S);
 // 输入学生信息
 void Input_StuNode(Node *head, TaskData *S);
-// 输入学号，如果输入为空返回0，学号已存在返回1，学号不存在返回2
-int Input_Stu_ID(char *str, Node *head);
+// 输入学号
+int Input_Stu_ID(char *str);
+// 判断学号是否存在
+int Judge_Id(char *str, Node *head);
 // 输入性别，男或女
 void Input_Stu_Sex(char *str);
 // 输入入学日期，年份限定在1900~2021年，
@@ -89,7 +91,6 @@ int DateInterval(Date d, Date s);
 // ===============================================程序入口====================================
 int main()
 {
-    // system("CLS");
     //撤销功能初始化
     TaskData *S = Revoke_init();
     // 创建学生信息链表头指针，指向第一个节点
@@ -130,8 +131,7 @@ void Input_TaskData(TaskData *S, int operate, Node *last, Student data)
 }
 void Output_TaskData(TaskData *S, Node *head)
 {
-    Node *a;
-    a = head;
+    Node *a = head;
     if (S->top == -1)
     {
         printf("\n没有可以撤销的内容！\n\n");
@@ -148,7 +148,6 @@ void Output_TaskData(TaskData *S, Node *head)
             {
                 a->next = NULL;
                 S->top = S->top - 1;
-
                 SaveStuNodeToFile(head);
                 printf("\n撤销成功！\n\n");
                 return;
@@ -167,7 +166,6 @@ void Output_TaskData(TaskData *S, Node *head)
         {
             a->next = p;
             S->top = S->top - 1;
-
             SaveStuNodeToFile(head);
             printf("\n撤销成功！\n\n");
             return;
@@ -181,7 +179,6 @@ void Output_TaskData(TaskData *S, Node *head)
                     p->next = a->next;
                     a->next = p;
                     S->top = S->top - 1;
-
                     SaveStuNodeToFile(head);
                     printf("\n撤销成功！\n\n");
                     return;
@@ -200,7 +197,6 @@ void Output_TaskData(TaskData *S, Node *head)
             {
                 a->data = S->task[S->top].data;
                 S->top = S->top - 1;
-
                 SaveStuNodeToFile(head);
                 printf("\n撤销成功！\n\n");
                 return;
@@ -221,8 +217,7 @@ Node *Stu_init(TaskData *S)
     head = Apply_StuNode();
     // 初始化头结点
     head->next = NULL;
-
-    if (access("./a.txt", 0))
+    if (access("./学生信息管理系统.txt", 0))
     {
         printf("\n欢迎使用学生信息管理系统\n\n");
         printf("本系统包含的功能有：\n");
@@ -245,33 +240,21 @@ Node *Stu_init(TaskData *S)
         // 存储每行的长度
         int line_len = 0;
         // 打开相对路径下的a.txt文件
-        FILE *openFile = fopen("./a.txt", "r");
+        FILE *openFile = fopen("./学生信息管理系统.txt", "r");
         // 循环按行读取
         while (fgets(buf, 1024, openFile))
         {
             // 获取文件长度
             line_len = strlen(buf);
-            // 排除换行
-            if ('\n' == buf[line_len - 1])
+            // 排除换行和回车
+            while ('\n' == buf[line_len - 1] || '\r' == buf[line_len - 1])
             {
                 buf[line_len - 1] = '\0';
                 //去掉换行后，长度减一，然后判断是否内容为空
                 line_len--;
-                if (0 == line_len)
-                {
-                    continue;
-                }
             }
-            //排除回车符
-            if ('\r' == buf[line_len - 1])
-            {
-                buf[line_len - 1] = '\0';
-                line_len--;
-                if (0 == line_len)
-                {
-                    continue;
-                }
-            }
+            if (0 == line_len)
+                continue;
             // 分解字符串，按空格分解
             Node *p = Apply_StuNode();
             p->next = NULL;
@@ -284,22 +267,11 @@ Node *Stu_init(TaskData *S)
             p->data.date.month = atoi(strtok(NULL, "/"));
             p->data.date.day = atoi(strtok(NULL, "/"));
             // 循环出最后一个节点
-            if (head->next == NULL)
-            {
-                head->next = p;
-            }
-            else
-            {
-                // 找出最后一个节点
-                Node *a;
-                a = head->next;
-                while (a->next != NULL)
-                {
-                    a = a->next;
-                }
-                // 将这个节点挂在最后一个节点上
-                a->next = p;
-            }
+            Node *a = head;
+            while (a->next != NULL)
+                a = a->next;
+            // 将这个节点挂在最后一个节点上
+            a->next = p;
         }
         fclose(openFile);
     }
@@ -319,43 +291,33 @@ Node *Apply_StuNode()
 void SaveStuNodeToFile(Node *head)
 {
 
-    FILE *openFile = fopen("./a.txt", "w");
-    // 循环出最后一个节点
-    if (head->next == NULL)
+    FILE *openFile = fopen("./学生信息管理系统.txt", "w"); // 找出最后一个节点
+    Node *a = head;
+    while (a->next != NULL)
     {
-        return;
+        char buf[1024];
+        strcpy(buf, a->next->data.stu_id);
+        strcat(buf, " ");
+        strcat(buf, a->next->data.stu_name);
+        strcat(buf, " ");
+        strcat(buf, a->next->data.stu_sex);
+        strcat(buf, " ");
+        strcat(buf, a->next->data.stu_class);
+        strcat(buf, " ");
+        char i[10];
+        itoa(a->next->data.date.year, i, 10);
+        strcat(buf, i);
+        strcat(buf, "/");
+        itoa(a->next->data.date.month, i, 10);
+        strcat(buf, i);
+        strcat(buf, "/");
+        itoa(a->next->data.date.day, i, 10);
+        strcat(buf, i);
+        strcat(buf, "\n");
+        a = a->next;
+        fputs(buf, openFile);
     }
-    else
-    {
-        // 找出最后一个节点
-        Node *a;
-        a = head;
-        while (a->next != NULL)
-        {
-            char buf[1024];
-            strcpy(buf, a->next->data.stu_id);
-            strcat(buf, " ");
-            strcat(buf, a->next->data.stu_name);
-            strcat(buf, " ");
-            strcat(buf, a->next->data.stu_sex);
-            strcat(buf, " ");
-            strcat(buf, a->next->data.stu_class);
-            strcat(buf, " ");
-            char i[10];
-            itoa(a->next->data.date.year, i, 10);
-            strcat(buf, i);
-            strcat(buf, "/");
-            itoa(a->next->data.date.month, i, 10);
-            strcat(buf, i);
-            strcat(buf, "/");
-            itoa(a->next->data.date.day, i, 10);
-            strcat(buf, i);
-            strcat(buf, "\n");
-            a = a->next;
-            fputs(buf, openFile);
-        }
-        fclose(openFile);
-    }
+    fclose(openFile);
 }
 // =============================================================================
 void Menu(Node *head, TaskData *S)
@@ -416,19 +378,12 @@ void Input_StuNode(Node *head, TaskData *S)
         Node *p = Apply_StuNode();
         p->next = NULL;
         printf("\n学号(纯数字):");
-        while (1)
+        Input_Stu_ID(p->data.stu_id);
+        while (Judge_Id(p->data.stu_id, head))
         {
-            int i;
-            i = Input_Stu_ID(p->data.stu_id, head);
-            if (i == 2)
-            {
-                break;
-            }
-            else
-            {
-                i == 0 ? printf("学号为空或非纯数字，请重新输入：") : printf("学号已存在，请重新输入：");
-            }
-        };
+            printf("学号存在，请重新输入: ");
+            Input_Stu_ID(p->data.stu_id);
+        }
         printf("\n姓名:");
         Input_Stu_Other(p->data.stu_name);
         printf("\n性别:");
@@ -436,34 +391,22 @@ void Input_StuNode(Node *head, TaskData *S)
         printf("\n班级:");
         Input_Stu_Other(p->data.stu_class);
         printf("\n入学时间(1900~2021年之间,示例 2000 11 11):");
+
         p->data.date = Input_Stu_Date();
-        if (head->next == NULL)
-        {
-            head->next = p;
-            // 撤销任务入栈
-            Input_TaskData(S, 0, head, p->data);
-        }
-        else
-        {
-            // 找出最后一个节点
-            Node *a;
-            a = head->next;
-            while (a->next != NULL)
-            {
-                a = a->next;
-            }
-            // 将这个节点挂在最后一个节点上
-            a->next = p;
-            Input_TaskData(S, 0, a, p->data);
-        }
+        // 找出最后一个节点
+        Node *a = head;
+        while (a->next != NULL)
+            a = a->next;
+        // 将这个节点挂在最后一个节点上
+        a->next = p;
+        Input_TaskData(S, 0, a, p->data);
     }
     SaveStuNodeToFile(head);
     printf("\n添加成功！\n\n");
 }
 void Output_StuNode(Node *head)
 {
-    Node *a;
-    a = head;
+    Node *a = head;
     // 判断链表是否为空
     if (a->next == NULL)
     {
@@ -483,35 +426,22 @@ void Output_StuNodeByID(Node *head)
 {
     printf("\n请输入要查询的学号(纯数字)：");
     char str[20];
-    while (1)
-    {
-        int i;
-        i = Input_Stu_ID(str, head);
-        if (i == 0)
-        {
-            printf("\n学号为空或非纯数字，请重新输入：");
-        }
-        else if (i == 2)
-        {
-            printf("\n学号不存在！\n\n");
-            return;
-        }
-        else
-        {
-            break;
-        }
-    };
-    Node *a;
-    a = head;
-    printf("\n%-10s %-10s %-10s %-10s %s\n", "学号", "姓名", "性别", "班级", "入学日期");
+    Input_Stu_ID(str);
+    Node *a = head;
+    int i = 0;
     while (a->next != NULL)
     {
         if (strcmp(str, a->next->data.stu_id) == 0)
         {
+            if (i == 0)
+                printf("\n%-10s %-10s %-10s %-10s %s\n", "学号", "姓名", "性别", "班级", "入学日期");
             printf("%-10s %-10s %-10s %-10s %d/%d/%d\n\n", a->next->data.stu_id, a->next->data.stu_name, a->next->data.stu_sex, a->next->data.stu_class, a->next->data.date.year, a->next->data.date.month, a->next->data.date.day);
+            i = 1;
         }
         a = a->next;
     }
+    if (i == 0)
+        printf("该学号不存在，请核对后再输入！\n");
 }
 
 void Delete_StuNodeByID(Node *head, TaskData *S)
@@ -521,19 +451,19 @@ void Delete_StuNodeByID(Node *head, TaskData *S)
         printf("\n学生信息为空，请输入学生信息后再进行此操作\n");
         return;
     }
-
     printf("\n请输入需要删除学生的学号:\n");
     char str[20];
     fflush(stdin);
     gets(str);
-    Node *a;
-    a = head;
+    Node *a = head;
     while (a->next != NULL)
     {
         if (strcmp(str, a->next->data.stu_id) == 0)
         {
             Input_TaskData(S, 1, a, a->next->data);
-            a->next = a->next->next;
+            Node *x = a->next->next;
+            free(a->next);
+            a->next = x;
             printf("\n删除成功\n\n");
             SaveStuNodeToFile(head);
             return;
@@ -546,24 +476,12 @@ void Updata_StuNodeByID(Node *head, TaskData *S)
 {
     char str[20];
     printf("\n请输入要修改的学号(纯数字)：");
-    while (1)
+    Input_Stu_ID(str);
+    if (!Judge_Id(str, head))
     {
-        int i;
-        i = Input_Stu_ID(str, head);
-        if (i == 0)
-        {
-            printf("\n学号为空或非纯数字，请重新输入：");
-        }
-        else if (i == 2)
-        {
-            printf("\n学号不存在！\n\n");
-            return;
-        }
-        else
-        {
-            break;
-        }
-    };
+        printf("学号不存在，请确认后再输入！\n");
+        return;
+    }
     Node *a = head;
     while (a->next != NULL)
     {
@@ -604,15 +522,13 @@ void Statistic_Stu_Class(Node *head)
         if (strcmp(str, a->data.stu_class) == 0)
         {
             if (x == 0)
-            {
                 printf("%-10s %-10s %-10s %-10s %s\n", "学号", "姓名", "性别", "班级", "入学日期");
-            }
             printf("%-10s %-10s %-10s %-10s %d/%d/%d\n", a->data.stu_id, a->data.stu_name, a->data.stu_sex, a->data.stu_class, a->data.date.year, a->data.date.month, a->data.date.day);
             x++;
         }
         a = a->next;
     }
-    printf("\n班级：%s \n总共有 %d 个学生\n\n", str, x);
+    x == 0 ? printf("不存在该班级！\n") : printf("\n班级：%s \n总共有 %d 个学生\n\n", str, x);
 }
 void Statistic_Stu_Sex(Node *head)
 {
@@ -623,15 +539,13 @@ void Statistic_Stu_Sex(Node *head)
         return;
     }
     int x = 0, y = 0;
-    char str[20];
+    char str[10];
     printf("\n请输入性别(男或女)：");
     Input_Stu_Sex(str);
     while (a != NULL)
     {
         if (strcmp(str, a->data.stu_sex) == 0)
-        {
             x++;
-        }
         y++;
         a = a->next;
     }
@@ -676,31 +590,37 @@ void Statistic_Stu_Graduation(Node *head)
     printf("\n\n学生总数：%d\n已毕业人数：%d\n毕业人数占比：%0.1f%%100\n", y, x, (double)x / y * 100);
 }
 // ========================================================================================
-int Input_Stu_ID(char *str, Node *head)
+int Input_Stu_ID(char *str)
 {
     fflush(stdin);
     gets(str);
     if (strspn(str, "0123456789") == strlen(str))
     {
         if (strlen(str) == 0)
-            return 0;
+        {
+            printf("不能为空！请重新输入：");
+            Input_Stu_ID(str);
+        }
     }
     else
     {
-        return 0;
+        printf("必须为纯数字！请重新输入：");
+        Input_Stu_ID(str);
     }
+}
 
+int Judge_Id(char *str, Node *head)
+{
     Node *a = head;
     while (a->next != NULL)
     {
         if (strcmp(str, a->next->data.stu_id) == 0)
-        {
             return 1;
-        }
         a = a->next;
     }
-    return 2;
+    return 0;
 }
+
 void Input_Stu_Other(char *str)
 {
     fflush(stdin);
@@ -776,15 +696,10 @@ Date Input_Stu_Date()
             else
             {
                 if (d.year < 1900 || d.year > 1900 + p->tm_year)
-                {
                     printf("年份应该处于1900~今年，请重新输入：");
-                    d = Input_Stu_Date();
-                }
                 else
-                {
-                    printf("日期输入有误，请重新输入：");
-                    d = Input_Stu_Date();
-                }
+                    printf("月份或天数有误，请重新输入：");
+                d = Input_Stu_Date();
             }
         }
         else
@@ -813,9 +728,7 @@ int Month(Date d)
 {
     int months[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     if (d.month == 2 && Yearday(d.year) == 366)
-    {
         return 29;
-    }
     return months[d.month - 1];
 }
 int EqualDate(Date d, Date s)
