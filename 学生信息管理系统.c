@@ -549,7 +549,7 @@ void Statistic_Stu_Sex(Node *head)
         y++;
         a = a->next;
     }
-    printf("\n总共有 %d 个%s学生\n占全校人数的 %0.1f%%100\n\n", x, str, (double)x / y * 100);
+    printf("\n总共有 %d 个%s学生\n占全校人数的 %0.1f%%\n\n", x, str, (double)x / y * 100);
 }
 
 void Statistic_Stu_Graduation(Node *head)
@@ -587,7 +587,7 @@ void Statistic_Stu_Graduation(Node *head)
         y++;
         a = a->next;
     }
-    printf("\n\n学生总数：%d\n已毕业人数：%d\n毕业人数占比：%0.1f%%100\n", y, x, (double)x / y * 100);
+    printf("\n\n学生总数：%d\n已毕业人数：%d\n毕业人数占比：%0.1f%%\n", y, x, (double)x / y * 100);
 }
 // ========================================================================================
 int Input_Stu_ID(char *str)
